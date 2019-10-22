@@ -1,0 +1,16 @@
+[package]
+name = "arror"
+version = "0.1.0"
+authors = ["s97712 <s97712@qq.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[test]]
+name = "tests"
+path = "tests/basic.rs"
+
+[dependencies]
+arror_derive = {path = "./arror_derive"}
+failure = "0.1"
+
