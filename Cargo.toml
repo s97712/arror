@@ -11,6 +11,6 @@ name = "tests"
 path = "tests/basic.rs"
 
 [dependencies]
-arror_derive = {path = "./arror_derive"}
-failure = "0.1"
+arror_derive = { path="arror_derive"}
+failure = "0.1.6"
 

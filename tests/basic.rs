@@ -10,7 +10,7 @@ pub enum TestError {
   TestDefault,
 
   #[fail(display="test override")]
-  #[arror(Evil)]
+  #[arror(Evil, abort)]
   TestOverride,
 
   #[fail(display="test other")]
@@ -28,8 +28,9 @@ fn test_default() {
   let err = cause_error(TestError::TestDefault);
 
   match err {
-    Err(Arror::Internal(err)) => {
-      assert_eq!(err.as_fail().to_string(), "test default")
+    Err(Arror::Internal(err, abort)) => {
+      assert_eq!(err.as_fail().to_string(), "test default");
+      assert_eq!(abort, false);
     },
     _ => {
       unreachable!()
@@ -44,8 +45,9 @@ fn test_override() {
   let err = cause_error(TestError::TestOverride);
 
   match err {
-    Err(Arror::Evil(err)) => {
-      assert_eq!(err.as_fail().to_string(), "test override")
+    Err(Arror::Evil(err, abort)) => {
+      assert_eq!(err.as_fail().to_string(), "test override");
+      assert_eq!(abort, true);
     },
     _ => {
       unreachable!()
