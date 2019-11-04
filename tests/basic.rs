@@ -1,6 +1,6 @@
 extern crate arror;
 use failure::{Fail, Error, AsFail};
-use arror::Arror;
+use arror::{Arror, ArrorKind};
 
 
 #[derive(Fail, Debug, Arror)]
@@ -28,15 +28,14 @@ fn test_default() {
   let err = cause_error(TestError::TestDefault);
 
   match err {
-    Err(Arror::Internal(err, abort)) => {
-      assert_eq!(err.as_fail().to_string(), "test default");
-      assert_eq!(abort, false);
+    Err(arror) => {
+      assert_eq!(arror.to_string(), "Internal");
+      assert_eq!(arror.abort(), false);
     },
     _ => {
       unreachable!()
     }
   };
-
 
 }
 
@@ -45,9 +44,9 @@ fn test_override() {
   let err = cause_error(TestError::TestOverride);
 
   match err {
-    Err(Arror::Evil(err, abort)) => {
-      assert_eq!(err.as_fail().to_string(), "test override");
-      assert_eq!(abort, true);
+    Err(arror) => {
+      assert_eq!(arror.to_string(), "Evil");
+      assert_eq!(arror.abort(), true);
     },
     _ => {
       unreachable!()

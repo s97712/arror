@@ -9,7 +9,7 @@ use syn;
 use syn::*;
 use syn::export::Span;
 
-fn get_match_body<'a>(data: &Data, name: &Ident, type_map: &[&str], def: &Ident, def_abort: bool)
+fn get_match_body<'a>(data: &Data, name: &Ident, type_map: &[&str], def_kind: &Ident, def_abort: bool)
   -> proc_macro2::TokenStream
 {
   let match_list = match data {
@@ -20,7 +20,7 @@ fn get_match_body<'a>(data: &Data, name: &Ident, type_map: &[&str], def: &Ident,
         let abort = find_attr(&variant.attrs, ["abort"].as_ref()).is_some();
         let error_type = find_attr(&variant.attrs, type_map).or_else(|| {
           if abort {
-            Some(def.clone())
+            Some(def_kind.clone())
           } else {
             None
           }
@@ -30,14 +30,18 @@ fn get_match_body<'a>(data: &Data, name: &Ident, type_map: &[&str], def: &Ident,
           let args = match &variant.fields.iter().next() {
             Some(_) => {
               let args = variant.fields.iter().map(|_|Ident::new("_", Span::call_site()));
-              quote!{
+              quote! {
                 (#(#args),*)
               }
             },
             None => quote!()
           };
           quote! {
-            #name::#ver_id#args => Arror::#error_type_ident(failure::Error::from(err), #abort),
+            #name::#ver_id#args => ::arror::Arror::new (
+              #abort,
+              ::arror::ArrorKind::#error_type_ident,
+              err
+            ),
           }
         })
       })
@@ -47,16 +51,15 @@ fn get_match_body<'a>(data: &Data, name: &Ident, type_map: &[&str], def: &Ident,
 
   quote! {
     #(#match_list)*
-    _ => Arror::#def(failure::Error::from(err), #def_abort)
+    _ => ::arror::Arror::new (
+      #def_abort,
+      ::arror::ArrorKind::#def_kind,
+      err
+   )
   }
 }
 
-fn get_error_ident(error_type: &str) -> Ident {
-  Ident::new(error_type, Span::call_site())
-}
-
 fn find_attr<'a>(attrs: &'a Vec<Attribute>, attr_map: &[&str]) -> Option<Ident> {
-
   let res = attrs.iter().find(|attr| {
     match attr.path.get_ident() {
       Some(ident) => &ident.to_string() == "arror",
@@ -90,38 +93,6 @@ fn find_attr<'a>(attrs: &'a Vec<Attribute>, attr_map: &[&str]) -> Option<Ident> 
   res
 }
 
-fn get_error_type(attrs: &Vec<Attribute>) -> Option<String> {
-
-  let error_type = attrs.iter().find(|attr| {
-    match attr.path.get_ident() {
-      Some(ident) => &ident.to_string() == "arror",
-      None => false
-    }
-  }).and_then(|attr| {
-    attr.parse_meta().ok().and_then(|meta| {
-      match meta {
-        Meta::List(list) => {
-          list.nested.iter().next().and_then(|item| {
-            match item {
-              NestedMeta::Meta(word) => {
-                word.path().get_ident().map(|name| name.to_string())
-              },
-              NestedMeta::Lit(lit) => {
-                match lit {
-                  Lit::Str(name) => Some(name.value()),
-                  _ => None
-                }
-              }
-            }
-          })
-        },
-        _ => None
-      }
-    })
-  });
-
-  error_type
-}
 
 fn impl_app_err_macro(ast: &syn::DeriveInput) -> TokenStream {
   let name = &ast.ident;
@@ -138,7 +109,7 @@ fn impl_app_err_macro(ast: &syn::DeriveInput) -> TokenStream {
 
   let gen = quote! {
     impl From<#name> for Arror {
-      fn from(err: #name) -> Self {
+      fn from(err: #name) -> Arror {
         match &err {
           #match_body
         }
@@ -154,5 +125,4 @@ pub fn app_err_macro_derive(input: TokenStream) -> TokenStream {
   let ast = syn::parse(input).unwrap();
   impl_app_err_macro(&ast)
 }
-
 
