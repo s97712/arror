@@ -1,6 +1,7 @@
 pub use arror_derive::Arror;
 use failure::{Fail, Causes};
 use std::fmt;
+use std::str::FromStr;
 
 #[derive(Copy, Clone, Debug)]
 pub enum ArrorKind {
@@ -98,3 +99,18 @@ impl fmt::Display for Arror {
   }
 }
 
+#[derive(Fail, Debug)]
+#[fail(display="{}", _0)]
+pub struct PlainError (String);
+
+impl From<String> for PlainError {
+  fn from(s: String) -> PlainError {
+    PlainError(s)
+  }
+}
+
+impl From<&str> for PlainError {
+  fn from(s: &str) -> PlainError {
+    PlainError::from(s.to_owned())
+  }
+}

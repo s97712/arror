@@ -1,6 +1,6 @@
 extern crate arror;
 use failure::{Fail, Error, AsFail};
-use arror::{Arror, ArrorKind};
+use arror::{Arror, ArrorKind, PlainError};
 
 
 #[derive(Fail, Debug, Arror)]
@@ -52,4 +52,16 @@ fn test_override() {
       unreachable!()
     }
   };
+}
+
+
+#[test]
+fn test_plain_error() {
+  let a = PlainError::from("fuck");
+
+  let b = PlainError::from("fuck".to_owned());
+
+  assert_eq!(a.to_string(), b.to_string());
+  assert_eq!(a.to_string(), "fuck");
+
 }
